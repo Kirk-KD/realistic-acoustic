@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "com.kirkkd.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+      
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
