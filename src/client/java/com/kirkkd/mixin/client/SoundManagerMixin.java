@@ -30,26 +30,26 @@ public abstract class SoundManagerMixin implements ISoundManagerMixin {
 
     @Inject(at = @At("HEAD"), method = "play(Lnet/minecraft/client/sound/SoundInstance;)V", cancellable = true)
     public void play(SoundInstance sound, CallbackInfo ci) {
-        if (sound instanceof PositionedSoundInstance positionedSound &&
+        if (RealisticAcousticsClient.isEnabled() &&
+                sound instanceof PositionedSoundInstance positionedSound &&
                 modifiedSoundCategories.contains(positionedSound.getCategory()) &&
-                !positionedSound.getId().equals(Identifier.of("block.trial_spawner.ambient")) // trial spawners annoying as hell
+                !positionedSound.getId().equals(Identifier.of("block.trial_spawner.ambient")) && // trial spawners annoying as hell
+                audioReceiver != null
         ) {
-            if (audioReceiver != null) {
-                audioReceiver.addSource(new AudioSource(sound));
-                ci.cancel();
-            }
+            audioReceiver.addSource(new AudioSource(sound));
+            ci.cancel();
         }
     }
 
     @Inject(at = @At("HEAD"), method = "stop(Lnet/minecraft/client/sound/SoundInstance;)V")
     public void stop(SoundInstance sound, CallbackInfo ci) {
-        if (audioReceiver != null)
+        if (RealisticAcousticsClient.isEnabled() && audioReceiver != null)
             audioReceiver.onSoundInstanceStopped(sound);
     }
 
     @Inject(at = @At("HEAD"), method = "tick(Z)V")
     public void tick(boolean paused, CallbackInfo ci) {
-        if (RealisticAcousticsClient.SOUND_MANAGER != null && RealisticAcousticsClient.MC_CLIENT.world != null) {
+        if (RealisticAcousticsClient.isEnabled() && RealisticAcousticsClient.SOUND_MANAGER != null && RealisticAcousticsClient.MC_CLIENT.world != null) {
             if (audioReceiver == null) audioReceiver = new AudioReceiver();
             audioReceiver.update();
         }

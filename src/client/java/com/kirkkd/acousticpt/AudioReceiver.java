@@ -23,7 +23,8 @@ public class AudioReceiver {
     }
 
     public void addSource(AudioSource source) {
-        audioSourceGrid.add(source);
+        if (RealisticAcousticsClient.isEnabled())
+            audioSourceGrid.add(source);
     }
 
     public List<AudioSource> getSourceInRadius(Vec3d pos, double radius) {
