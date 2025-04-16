@@ -12,6 +12,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Ray {
@@ -27,8 +28,16 @@ public class Ray {
     private final double cumulativeDistance;
     private int interactions;
     private Vec3d lastEcho;
+    private List<AudioSource> hitSources;
 
-    public Ray(AudioReceiver audioReceiver, Vec3d startPosition, Vec3d startDirection, double energy, double cumulativeDistance, int interactions, Vec3d lastEcho) {
+    public Ray(AudioReceiver audioReceiver,
+               Vec3d startPosition,
+               Vec3d startDirection,
+               double energy,
+               double cumulativeDistance,
+               int interactions,
+               Vec3d lastEcho,
+               List<AudioSource> hitSources) {
         world = RealisticAcousticsClient.MC_CLIENT.world;
         this.audioReceiver = audioReceiver;
         this.startPosition = startPosition;
@@ -37,12 +46,13 @@ public class Ray {
         this.cumulativeDistance = cumulativeDistance;
         this.interactions = interactions;
         this.lastEcho = lastEcho;
+        this.hitSources = hitSources;
 
         count++;
     }
 
     public Ray(AudioReceiver audioReceiver, Vec3d startPosition, Vec3d startDirection) {
-        this(audioReceiver, startPosition, startDirection, Config.DEFAULT_RAY_ENERGY, 0, 0, null);
+        this(audioReceiver, startPosition, startDirection, Config.DEFAULT_RAY_ENERGY, 0, 0, null, new ArrayList<>());
     }
 
     public void cast() {
@@ -112,6 +122,9 @@ public class Ray {
             List<AudioSource> audioSourcesInRange = audioReceiver.getSourceInRadius(currentPos, 1);
             if (!audioSourcesInRange.isEmpty()) {
                 for (AudioSource source : audioSourcesInRange) {
+                    if (hitSources.contains(source)) continue;
+
+                    hitSources.add(source);
                     lastEcho = lastEcho == null && interactions == 0 ? source.getPosition() : lastEcho;
                     audioReceiver.onRayHitSource(
                             source,
@@ -122,7 +135,6 @@ public class Ray {
                             )
                     );
                 }
-                return;
             }
 
             BlockPos blockPos = new BlockPos(x, y, z);
@@ -142,7 +154,7 @@ public class Ray {
                     // reflect
                     new Ray(audioReceiver, echoPosition, newDirection,
                             energy * Coefficient.ofReflection(blockState),
-                            cumulativeDistance + t, interactions, lastEcho).cast();
+                            cumulativeDistance + t, interactions, lastEcho, hitSources).cast();
 
                     wasInAir = false;
                 }

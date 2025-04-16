@@ -4,7 +4,9 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "MinecraftClientMixin",
-    "SoundManagerMixin"
+    "sound.SoundManagerMixin",
+    "sound.SoundSystemMixin",
+    "sound.SourceMixin"
   ],
   "injectors": {
     "defaultRequire": 1

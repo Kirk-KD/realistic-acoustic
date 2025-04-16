@@ -1,7 +1,11 @@
-package com.kirkkd.mixin.client;
+package com.kirkkd.mixin.client.sound;
 
+import com.kirkkd.RealisticAcoustics;
 import com.kirkkd.RealisticAcousticsClient;
 import com.kirkkd.access.ISoundManagerMixin;
+import com.kirkkd.access.ISoundSystemMixin;
+import com.kirkkd.access.ISourceMixin;
+import com.kirkkd.acousticpt.AudioFilter;
 import com.kirkkd.acousticpt.AudioReceiver;
 import com.kirkkd.acousticpt.AudioSource;
 import com.kirkkd.acousticpt.ImageSoundInstance;
