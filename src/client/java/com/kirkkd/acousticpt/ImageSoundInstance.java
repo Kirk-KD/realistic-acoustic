@@ -16,10 +16,12 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ImageSoundInstance extends MovingSoundInstance {
     private double energy = 1;
 
+    private final SoundInstance originalInstance;
     private final AtomicReference<AudioFilter> audioFilter = new AtomicReference<>();
 
     protected ImageSoundInstance(SoundInstance original) {
         super(SoundEvent.of(original.getId()), original.getCategory(), SoundInstance.createRandom());
+        originalInstance = original;
         getSoundSet(RealisticAcousticsClient.SOUND_MANAGER);
     }
 
@@ -28,12 +30,10 @@ public class ImageSoundInstance extends MovingSoundInstance {
             ISourceMixin sourceMixin = (ISourceMixin) source;
             int pointer = sourceMixin.realistic_acoustics_1_21_5$getPointer();
 
-            float minGainHF = 0.01f;
+            float minGainHF = 0.05f;
             float gain = 1.0f;
             float gainHF = (float) (minGainHF + (gain - minGainHF) * energy);
             audioFilter.set(new AudioFilter(pointer).lowPass(1f, gainHF));
-
-//            RealisticAcoustics.LOGGER.info("low pass {}", energy);
         });
     }
 
@@ -86,5 +86,10 @@ public class ImageSoundInstance extends MovingSoundInstance {
     public void setEnergySmoothly(double targetEnergy, double smoothFactor) {
         double newEnergy = this.energy + (targetEnergy - this.energy) * smoothFactor;
         setEnergy(newEnergy);
+    }
+
+    @Override
+    public float getPitch() {
+        return originalInstance.getPitch();
     }
 }

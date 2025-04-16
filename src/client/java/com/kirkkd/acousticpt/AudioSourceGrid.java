@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AudioSourceGrid {
-    public static final int GRID_SIZE = 64;
-    public static final int NUM_CELLS = 16;
+    public static final int GRID_SIZE = 32;
+    public static final int NUM_CELLS = 8;
     public static final int CELL_SIZE = GRID_SIZE / NUM_CELLS;
     public static final int HALF_GRID = GRID_SIZE / 2;
 

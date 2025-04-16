@@ -1,11 +1,7 @@
 package com.kirkkd.mixin.client.sound;
 
-import com.kirkkd.RealisticAcoustics;
 import com.kirkkd.RealisticAcousticsClient;
 import com.kirkkd.access.ISoundManagerMixin;
-import com.kirkkd.access.ISoundSystemMixin;
-import com.kirkkd.access.ISourceMixin;
-import com.kirkkd.acousticpt.AudioFilter;
 import com.kirkkd.acousticpt.AudioReceiver;
 import com.kirkkd.acousticpt.AudioSource;
 import com.kirkkd.acousticpt.ImageSoundInstance;
@@ -20,23 +16,19 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List;
-
 @Mixin(SoundManager.class)
 public abstract class SoundManagerMixin implements ISoundManagerMixin {
     @Shadow @Final private SoundSystem soundSystem;
-
-    @Unique
-    private final List<SoundCategory> modifiedSoundCategories = List.of(SoundCategory.BLOCKS, SoundCategory.RECORDS, SoundCategory.HOSTILE);
 
     @Unique
     private AudioReceiver audioReceiver = null;
 
     @Inject(at = @At("HEAD"), method = "play(Lnet/minecraft/client/sound/SoundInstance;)V", cancellable = true)
     public void play(SoundInstance sound, CallbackInfo ci) {
-        if (RealisticAcousticsClient.isEnabled() &&
+        if (
+                sound.getCategory() != SoundCategory.MASTER &&
+                RealisticAcousticsClient.isEnabled() &&
                 sound instanceof PositionedSoundInstance positionedSound &&
-                modifiedSoundCategories.contains(positionedSound.getCategory()) &&
                 !positionedSound.getId().equals(Identifier.of("block.trial_spawner.ambient")) && // trial spawners annoying as hell
                 audioReceiver != null
         ) {

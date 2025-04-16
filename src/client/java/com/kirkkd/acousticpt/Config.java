@@ -1,7 +1,7 @@
 package com.kirkkd.acousticpt;
 
 public class Config {
-    public static final int NUM_RAYS = 3000;
+    public static final int NUM_RAYS = 2000;
     public static final double MAX_ENERGY_PER_RAY = 0.004;
     public static final double MIN_ENERGY = 0.001;
     public static final int MAX_INTERACTIONS = 10;
