@@ -9,13 +9,12 @@ import java.util.List;
 public class AudioSourceGrid {
     public static final int GRID_SIZE = 32;
     public static final int NUM_CELLS = 8;
+    public static final int NUM_CELLS_CUBED = NUM_CELLS * NUM_CELLS * NUM_CELLS;
     public static final int CELL_SIZE = GRID_SIZE / NUM_CELLS;
     public static final int HALF_GRID = GRID_SIZE / 2;
 
-    private boolean empty = true;
-
     @SuppressWarnings("unchecked")
-    private final List<AudioSource>[][][] grid = new ArrayList[NUM_CELLS][NUM_CELLS][NUM_CELLS];
+    private final List<AudioSource>[] grid = new ArrayList[NUM_CELLS_CUBED];
     private final List<AudioSource> outOfRange = new ArrayList<>();
 
     private final AudioReceiver audioReceiver;
@@ -26,31 +25,25 @@ public class AudioSourceGrid {
     }
 
     public void clearNotPlaying() {
-        List<AudioSource> stillPlaying = new ArrayList<>();
-
-        for (int x = 0; x < NUM_CELLS; x++) {
-            for (int y = 0; y < NUM_CELLS; y++) {
-                for (int z = 0; z < NUM_CELLS; z++) {
-                    stillPlaying.addAll(grid[x][y][z].stream().filter(AudioSource::isPlaying).toList());
-                    grid[x][y][z].clear();
-                }
+        List<AudioSource> validSources = new ArrayList<>();
+        for (int i = 0; i < NUM_CELLS_CUBED; i++) {
+            for (AudioSource source : grid[i]) {
+                if (source.isPlaying()) validSources.add(source);
             }
+            grid[i].clear();
         }
 
-        stillPlaying.forEach(this::add);
+        validSources.forEach(this::add);
         outOfRange.removeIf(audioSource -> !audioSource.isPlaying());
         outOfRange.forEach(this::add);
-
-        empty = stillPlaying.isEmpty() && outOfRange.isEmpty();
     }
 
     public void add(AudioSource audioSource) {
         if (isOutOfRange(audioSource.getPosition()) && !outOfRange.contains(audioSource)) outOfRange.add(audioSource);
         else {
             Vec3i cell = posToCellIndex(audioSource.getPosition());
-            grid[cell.getX()][cell.getY()][cell.getZ()].add(audioSource);
+            grid[idx(cell.getX(), cell.getY(), cell.getZ())].add(audioSource);
         }
-        empty = false;
     }
 
     public List<AudioSource> getInRadius(Vec3d pos, double radius) {
@@ -58,23 +51,23 @@ public class AudioSourceGrid {
         return getCell(pos).stream().filter(source -> source.getPosition().isInRange(pos, radius)).toList();
     }
 
+    public int count() {
+        int c = 0;
+        for (List<AudioSource> cell : grid) c += cell.size();
+        return c + outOfRange.size();
+    }
+
     public boolean isEmpty() {
-        return empty;
+        return count() == 0;
     }
 
     private void initialize() {
-        for (int x = 0; x < NUM_CELLS; x++) {
-            for (int y = 0; y < NUM_CELLS; y++) {
-                for (int z = 0; z < NUM_CELLS; z++) {
-                    grid[x][y][z] = new ArrayList<>();
-                }
-            }
-        }
+        for (int i = 0; i < NUM_CELLS_CUBED; i++) grid[i] = new ArrayList<>(5);
     }
 
     private List<AudioSource> getCell(Vec3d pos) {
         Vec3i cell = posToCellIndex(pos);
-        return grid[cell.getX()][cell.getY()][cell.getZ()];
+        return grid[idx(cell.getX(), cell.getY(), cell.getZ())];
     }
 
     private Vec3i posToCellIndex(Vec3d pos) {
@@ -94,5 +87,9 @@ public class AudioSourceGrid {
     private boolean isOutOfRange(Vec3d pos) {
         Vec3d relPos = pos.subtract(audioReceiver.getPosition());
         return Math.abs(relPos.x) > HALF_GRID || Math.abs(relPos.y) > HALF_GRID || Math.abs(relPos.z) > HALF_GRID;
+    }
+
+    private static int idx(int x, int y, int z) {
+        return x * NUM_CELLS * NUM_CELLS + y * NUM_CELLS + z;
     }
 }

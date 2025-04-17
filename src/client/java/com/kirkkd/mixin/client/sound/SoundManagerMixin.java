@@ -26,11 +26,12 @@ public abstract class SoundManagerMixin implements ISoundManagerMixin {
     @Inject(at = @At("HEAD"), method = "play(Lnet/minecraft/client/sound/SoundInstance;)V", cancellable = true)
     public void play(SoundInstance sound, CallbackInfo ci) {
         if (
-                sound.getCategory() != SoundCategory.MASTER &&
-                RealisticAcousticsClient.isEnabled() &&
-                sound instanceof PositionedSoundInstance positionedSound &&
-                !positionedSound.getId().equals(Identifier.of("block.trial_spawner.ambient")) && // trial spawners annoying as hell
-                audioReceiver != null
+                sound.getCategory() != SoundCategory.MASTER
+                && sound.getCategory() != SoundCategory.MUSIC
+                && RealisticAcousticsClient.isEnabled()
+                && sound instanceof PositionedSoundInstance positionedSound
+                && !positionedSound.getId().equals(Identifier.of("block.trial_spawner.ambient")) // trial spawners annoying as hell
+                && audioReceiver != null
         ) {
             audioReceiver.addSource(new AudioSource(sound));
             ci.cancel();
