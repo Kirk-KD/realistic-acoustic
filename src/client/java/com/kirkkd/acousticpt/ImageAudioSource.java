@@ -29,23 +29,34 @@ public class ImageAudioSource {
                 .sum();
         double imageEnergy = Math.clamp(totalEnergy / Config.MAX_ENERGY, 0.0, 1.0);
 
-        List<AudioReceiver.HitSourceResult> echoResults = hits.stream()
-                .filter(hit -> hit.lastEcho() != null)
-                .toList();
-        Vec3d sum = echoResults.stream()
+        Vec3d sum = hits.stream()
                 .map(AudioReceiver.HitSourceResult::lastEcho)
                 .reduce(new Vec3d(0.0, 0.0, 0.0), Vec3d::add);
-        Vec3d imagePosition = echoResults.isEmpty()
+        Vec3d imagePosition = hits.isEmpty()
                 ? originalAudioSource.getPosition()
-                : sum.multiply(1.0 / echoResults.size());
+                : sum.multiply(1.0 / hits.size());
 
         double imageVolume = originalAudioSource.getSoundInstance().getVolume() * imageEnergy;
+
+        List<AudioReceiver.HitSourceResult> nonDirectHits = hits.stream()
+                .filter(hitSourceResult -> !hitSourceResult.isDirectHit())
+                .toList();
+
+        if (!nonDirectHits.isEmpty()) {
+            double reverbDelay = nonDirectHits.stream()
+                    .mapToDouble(AudioReceiver.HitSourceResult::lastEchoDistance)
+                    .sum() / nonDirectHits.size() / Config.SPEED_OF_SOUND;
+            double percentEcho = (double) nonDirectHits.size() / hits.size();
+
+            imageSoundInstance.setReverbDelay(reverbDelay);
+            imageSoundInstance.setReverbGain(percentEcho);
+        }
 
         imageSoundInstance.setPositionSmoothly(imagePosition, smooth ? Config.SMOOTH_FACTOR : 1);
         imageSoundInstance.setVolumeSmoothly(imageVolume, smooth ? Config.SMOOTH_FACTOR : 1);
         imageSoundInstance.setEnergySmoothly(imageEnergy, smooth ? Config.SMOOTH_FACTOR : 1);
 
-        echoResults.forEach(result -> DebugParticle.summon(0x00FF00, result.lastEcho()));
+        hits.forEach(result -> DebugParticle.summon(0x00FF00, result.lastEcho()));
         DebugParticle.summon(DustParticleEffect.RED, imagePosition);
     }
 
@@ -55,7 +66,12 @@ public class ImageAudioSource {
     }
 
     public void stopOriginalAudioInstance() {
+        cleanUpAudioFilter();
         RealisticAcousticsClient.SOUND_MANAGER.stop(originalAudioSource.getSoundInstance());
+    }
+
+    public void cleanUpAudioFilter() {
+        imageSoundInstance.cleanUpAudioFilter();
     }
 
     public boolean isPlaying() {

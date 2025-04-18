@@ -2,9 +2,11 @@ package com.kirkkd.mixin.client.sound;
 
 import com.kirkkd.RealisticAcousticsClient;
 import com.kirkkd.access.ISoundManagerMixin;
+import com.kirkkd.acousticpt.AudioFilter;
 import com.kirkkd.acousticpt.AudioReceiver;
 import com.kirkkd.acousticpt.AudioSource;
 import com.kirkkd.acousticpt.ImageSoundInstance;
+import com.kirkkd.util.DebugMessage;
 import net.minecraft.client.sound.*;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Identifier;
@@ -49,6 +51,7 @@ public abstract class SoundManagerMixin implements ISoundManagerMixin {
         if (RealisticAcousticsClient.isEnabled() && RealisticAcousticsClient.SOUND_MANAGER != null && RealisticAcousticsClient.MC_CLIENT.world != null) {
             if (audioReceiver == null) audioReceiver = new AudioReceiver();
             audioReceiver.update();
+            DebugMessage.overlay("Count: " + AudioFilter.effectSlotCount);
         }
     }
 

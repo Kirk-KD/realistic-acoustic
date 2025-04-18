@@ -16,6 +16,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ImageSoundInstance extends MovingSoundInstance {
     private double energy = 1;
 
+    private double reverbDelay = -1;
+    private double reverbGain = -1;
+
     private final SoundInstance originalInstance;
     private final AtomicReference<AudioFilter> audioFilter = new AtomicReference<>();
 
@@ -25,35 +28,52 @@ public class ImageSoundInstance extends MovingSoundInstance {
         getSoundSet(RealisticAcousticsClient.SOUND_MANAGER);
     }
 
-    public void applyMuffle(Channel.SourceManager sourceManager) {
-        sourceManager.run(source -> {
+    public void applyAudioEffects(Channel.SourceManager sourceManager) {
+        if (!isDone()) sourceManager.run(source -> {
             ISourceMixin sourceMixin = (ISourceMixin) source;
             int pointer = sourceMixin.realistic_acoustics_1_21_5$getPointer();
 
+            AudioFilter filter = audioFilter.get() != null ? audioFilter.get() : new AudioFilter(pointer);
+
+            // Muffle
             float minGainHF = 0.05f;
             float gain = 1.0f;
             float gainHF = (float) (minGainHF + (gain - minGainHF) * energy);
-            audioFilter.set(new AudioFilter(pointer).lowPass(1f, gainHF));
+            filter.lowPass(1f, gainHF);
+
+            // Reverb
+            if (reverbDelay != -1) filter.reverb((float) reverbDelay, (float) reverbGain);
+
+            audioFilter.set(filter);
         });
     }
 
     public void cleanUpAudioFilter() {
-        // Currently broken, will fix when necessary.
         if (audioFilter.get() != null) audioFilter.get().destroy();
     }
 
     @Override
     public void tick() {
+        if (!RealisticAcousticsClient.isEnabled()) return;
+
         SoundSystem soundSystem = ((ISoundManagerMixin) RealisticAcousticsClient.SOUND_MANAGER).realistic_acoustics_1_21_5$getSoundSystem();
         Channel.SourceManager sourceManager = ((ISoundSystemMixin) soundSystem).realistic_acoustics_1_21_5$getSourceManager(this);
 
         if (sourceManager == null) RealisticAcoustics.LOGGER.warn("source manager is null");
-        else applyMuffle(sourceManager);
+        else applyAudioEffects(sourceManager);
     }
 
     @Override
     public CompletableFuture<AudioStream> getAudioStream(SoundLoader loader, Identifier id, boolean repeatInstantly) {
         return super.getAudioStream(loader, id, repeatInstantly);
+    }
+
+    public void setReverbDelay(double reverbDelay) {
+        this.reverbDelay = reverbDelay;
+    }
+
+    public void setReverbGain(double reverbGain) {
+        this.reverbGain = reverbGain;
     }
 
     public void setPositionSmoothly(Vec3d targetPos, double smoothFactor) {
@@ -91,5 +111,10 @@ public class ImageSoundInstance extends MovingSoundInstance {
     @Override
     public float getPitch() {
         return originalInstance.getPitch();
+    }
+
+    @Override
+    public AttenuationType getAttenuationType() {
+        return AttenuationType.LINEAR;
     }
 }

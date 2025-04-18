@@ -1,9 +1,11 @@
 package com.kirkkd.acousticpt;
 
+import com.kirkkd.RealisticAcoustics;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class AudioSourceGrid {
@@ -29,13 +31,22 @@ public class AudioSourceGrid {
         for (int i = 0; i < NUM_CELLS_CUBED; i++) {
             for (AudioSource source : grid[i]) {
                 if (source.isPlaying()) validSources.add(source);
+                else source.cleanUpAudioFilter();
             }
             grid[i].clear();
         }
 
         validSources.forEach(this::add);
-        outOfRange.removeIf(audioSource -> !audioSource.isPlaying());
-        outOfRange.forEach(this::add);
+
+        Iterator<AudioSource> it = outOfRange.iterator();
+        while (it.hasNext()) {
+            AudioSource audioSource = it.next();
+            if (audioSource.isPlaying()) add(audioSource);
+            else {
+                audioSource.cleanUpAudioFilter();
+                it.remove();
+            }
+        }
     }
 
     public void add(AudioSource audioSource) {

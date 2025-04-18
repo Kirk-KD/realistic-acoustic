@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AudioReceiver {
-    public record HitSourceResult(double energy, double distance, Vec3d lastEcho) {}
+    public record HitSourceResult(double energy, double distance, Vec3d lastEcho, double lastEchoDistance, boolean isDirectHit) {}
 
     private final AudioSourceGrid audioSourceGrid;
     private SoundListenerTransform soundListenerTransform = null;
@@ -37,11 +37,11 @@ public class AudioReceiver {
     public void update() {
         soundListenerTransform = RealisticAcousticsClient.SOUND_MANAGER.getListenerTransform();
 
-        if (audioSourceGrid.isEmpty()) return;
+        if (!audioSourceGrid.isEmpty()) {
+            Ray.count = 0; // DEBUG
+            castRays();
+        }
 
-        Ray.count = 0; // DEBUG
-
-        castRays();
         playImageAudioSources();
 
         audioSourceGrid.clearNotPlaying();
@@ -80,7 +80,7 @@ public class AudioReceiver {
             if (imageAudioSources.containsKey(source)) {
                 ImageAudioSource imageAudioSource = imageAudioSources.get(source);
                 if (!imageAudioSource.isPlaying()) imageAudioSource.stopOriginalAudioInstance();
-                imageAudioSource.updateImageSoundInstance(results);
+                else imageAudioSource.updateImageSoundInstance(results);
             } else {
                 ImageAudioSource imageAudioSource = new ImageAudioSource(source, results);
                 imageAudioSources.put(source, imageAudioSource);

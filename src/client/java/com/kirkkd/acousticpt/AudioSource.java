@@ -28,4 +28,8 @@ public class AudioSource {
     public Vec3d getPosition() {
         return position;
     }
+
+    public void cleanUpAudioFilter() {
+        if (owner != null) owner.cleanUpAudioFilter();
+    }
 }

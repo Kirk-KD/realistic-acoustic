@@ -28,7 +28,7 @@ public class Ray {
     private final double cumulativeDistance;
     private int interactions;
     private Vec3d lastEcho;
-    private List<AudioSource> hitSources;
+    private final List<AudioSource> hitSources;
 
     public Ray(AudioReceiver audioReceiver,
                Vec3d startPosition,
@@ -125,13 +125,15 @@ public class Ray {
                     if (hitSources.contains(source)) continue;
 
                     hitSources.add(source);
-                    lastEcho = lastEcho == null && interactions == 0 ? source.getPosition() : lastEcho;
+                    lastEcho = lastEcho == null ? source.getPosition() : lastEcho;
                     audioReceiver.onRayHitSource(
                             source,
                             new AudioReceiver.HitSourceResult(
                                     energy,
                                     cumulativeDistance + t,
-                                    lastEcho
+                                    lastEcho,
+                                    lastEcho == null ? -1 : lastEcho.distanceTo(audioReceiver.getPosition()),
+                                    interactions == 0
                             )
                     );
                 }
