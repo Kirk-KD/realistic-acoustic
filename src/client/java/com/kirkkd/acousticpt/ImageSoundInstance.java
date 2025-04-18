@@ -29,7 +29,7 @@ public class ImageSoundInstance extends MovingSoundInstance {
     }
 
     public void applyAudioEffects(Channel.SourceManager sourceManager) {
-        if (!isDone()) sourceManager.run(source -> {
+        sourceManager.run(source -> {
             ISourceMixin sourceMixin = (ISourceMixin) source;
             int pointer = sourceMixin.realistic_acoustics_1_21_5$getPointer();
 
@@ -39,10 +39,11 @@ public class ImageSoundInstance extends MovingSoundInstance {
             float minGainHF = 0.05f;
             float gain = 1.0f;
             float gainHF = (float) (minGainHF + (gain - minGainHF) * energy);
-            filter.lowPass(1f, gainHF);
+//            filter.lowPass(gain, gainHF);
 
             // Reverb
-            if (reverbDelay != -1) filter.reverb((float) reverbDelay, (float) reverbGain);
+            if (reverbDelay != -1 && AudioCategories.shouldApplyReverb(originalInstance))
+                filter.reverb((float) reverbDelay, (float) reverbGain);
 
             audioFilter.set(filter);
         });

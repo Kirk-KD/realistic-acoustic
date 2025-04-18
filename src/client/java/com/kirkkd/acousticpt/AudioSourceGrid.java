@@ -50,8 +50,9 @@ public class AudioSourceGrid {
     }
 
     public void add(AudioSource audioSource) {
-        if (isOutOfRange(audioSource.getPosition()) && !outOfRange.contains(audioSource)) outOfRange.add(audioSource);
-        else {
+        if (isOutOfRange(audioSource.getPosition())) {
+            if (!outOfRange.contains(audioSource)) outOfRange.add(audioSource);
+        } else {
             Vec3i cell = posToCellIndex(audioSource.getPosition());
             grid[idx(cell.getX(), cell.getY(), cell.getZ())].add(audioSource);
         }

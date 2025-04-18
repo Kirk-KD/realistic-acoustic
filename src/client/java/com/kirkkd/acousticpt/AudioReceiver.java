@@ -44,6 +44,8 @@ public class AudioReceiver {
 
         playImageAudioSources();
 
+        DebugMessage.overlay("count: " + audioSourceGrid.count());
+
         audioSourceGrid.clearNotPlaying();
         hitSourceResults.clear();
     }
@@ -55,8 +57,11 @@ public class AudioReceiver {
 
     public void onSoundInstanceStopped(SoundInstance sound) {
         for (Map.Entry<AudioSource, ImageAudioSource> entry : imageAudioSources.entrySet()) {
-            if (entry.getKey().getSoundInstance().equals(sound))
-                RealisticAcousticsClient.SOUND_MANAGER.stop(entry.getValue().getImageSoundInstance());
+            if (entry.getKey().getSoundInstance().equals(sound)) {
+                ImageAudioSource imageAudioSource = entry.getValue();
+//                imageAudioSource.cleanUpAudioFilter();
+                RealisticAcousticsClient.SOUND_MANAGER.stop(imageAudioSource.getImageSoundInstance());
+            }
         }
     }
 
@@ -79,8 +84,7 @@ public class AudioReceiver {
 
             if (imageAudioSources.containsKey(source)) {
                 ImageAudioSource imageAudioSource = imageAudioSources.get(source);
-                if (!imageAudioSource.isPlaying()) imageAudioSource.stopOriginalAudioInstance();
-                else imageAudioSource.updateImageSoundInstance(results);
+                if (imageAudioSource.isPlaying()) imageAudioSource.updateImageSoundInstance(results);
             } else {
                 ImageAudioSource imageAudioSource = new ImageAudioSource(source, results);
                 imageAudioSources.put(source, imageAudioSource);
@@ -88,7 +92,14 @@ public class AudioReceiver {
             }
         }
 
-        imageAudioSources.entrySet().removeIf(entry -> !entry.getValue().isPlaying());
+        Iterator<Map.Entry<AudioSource, ImageAudioSource>> it = imageAudioSources.entrySet().iterator();
+        while (it.hasNext()) {
+            ImageAudioSource imageAudioSource = it.next().getValue();
+            if (!imageAudioSource.isPlaying()) {
+//                imageAudioSource.cleanUpAudioFilter();
+                it.remove();
+            }
+        }
     }
 
     private static List<Vec3d> generateDirections() {

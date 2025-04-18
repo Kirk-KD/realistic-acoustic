@@ -1,11 +1,9 @@
 package com.kirkkd.mixin.client.sound;
 
+import com.kirkkd.RealisticAcoustics;
 import com.kirkkd.RealisticAcousticsClient;
 import com.kirkkd.access.ISoundManagerMixin;
-import com.kirkkd.acousticpt.AudioFilter;
-import com.kirkkd.acousticpt.AudioReceiver;
-import com.kirkkd.acousticpt.AudioSource;
-import com.kirkkd.acousticpt.ImageSoundInstance;
+import com.kirkkd.acousticpt.*;
 import com.kirkkd.util.DebugMessage;
 import net.minecraft.client.sound.*;
 import net.minecraft.sound.SoundCategory;
@@ -28,11 +26,8 @@ public abstract class SoundManagerMixin implements ISoundManagerMixin {
     @Inject(at = @At("HEAD"), method = "play(Lnet/minecraft/client/sound/SoundInstance;)V", cancellable = true)
     public void play(SoundInstance sound, CallbackInfo ci) {
         if (
-                sound.getCategory() != SoundCategory.MASTER
-                && sound.getCategory() != SoundCategory.MUSIC
+                !AudioCategories.shouldIgnore(sound)
                 && RealisticAcousticsClient.isEnabled()
-                && sound instanceof PositionedSoundInstance positionedSound
-                && !positionedSound.getId().equals(Identifier.of("block.trial_spawner.ambient")) // trial spawners annoying as hell
                 && audioReceiver != null
         ) {
             audioReceiver.addSource(new AudioSource(sound));
@@ -51,7 +46,6 @@ public abstract class SoundManagerMixin implements ISoundManagerMixin {
         if (RealisticAcousticsClient.isEnabled() && RealisticAcousticsClient.SOUND_MANAGER != null && RealisticAcousticsClient.MC_CLIENT.world != null) {
             if (audioReceiver == null) audioReceiver = new AudioReceiver();
             audioReceiver.update();
-            DebugMessage.overlay("Count: " + AudioFilter.effectSlotCount);
         }
     }
 

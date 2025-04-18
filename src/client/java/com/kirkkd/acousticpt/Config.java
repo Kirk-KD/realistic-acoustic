@@ -10,5 +10,5 @@ public class Config {
     public static final double MAX_ENERGY = MAX_ENERGY_PER_RAY * NUM_RAYS;
     public static final double SMOOTH_FACTOR = 0.5;
 
-    public static final float SPEED_OF_SOUND = 20f;
+    public static final float SPEED_OF_SOUND = 10f;
 }
