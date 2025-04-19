@@ -1,5 +1,6 @@
 package com.kirkkd;
 
+import com.kirkkd.access.ISoundManagerMixin;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -61,6 +62,6 @@ public class RealisticAcousticsClient implements ClientModInitializer {
 	}
 
 	public static void onDisconnect() {
-
+		if (SOUND_MANAGER != null) ((ISoundManagerMixin) SOUND_MANAGER).realist_acoustics_1_21_5$getAudioReceiver().clearAudioSourceGrid();
 	}
 }

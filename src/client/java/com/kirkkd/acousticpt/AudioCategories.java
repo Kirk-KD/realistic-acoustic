@@ -2,7 +2,6 @@ package com.kirkkd.acousticpt;
 
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Identifier;
 
 import java.util.List;
 

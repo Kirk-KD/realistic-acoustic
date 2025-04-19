@@ -65,11 +65,6 @@ public class ImageAudioSource {
         ((ISoundManagerMixin) RealisticAcousticsClient.SOUND_MANAGER).realistic_acoustics_1_21_5$playImage(imageSoundInstance);
     }
 
-    public void stopOriginalAudioInstance() {
-//        cleanUpAudioFilter();
-        RealisticAcousticsClient.SOUND_MANAGER.stop(originalAudioSource.getSoundInstance());
-    }
-
     public void cleanUpAudioFilter() {
         imageSoundInstance.cleanUpAudioFilter();
     }

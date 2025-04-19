@@ -1,11 +1,9 @@
 package com.kirkkd.acousticpt;
 
-import com.kirkkd.RealisticAcoustics;
 import com.kirkkd.RealisticAcousticsClient;
 import com.kirkkd.util.DebugMessage;
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.client.sound.SoundListenerTransform;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.*;
@@ -59,7 +57,6 @@ public class AudioReceiver {
         for (Map.Entry<AudioSource, ImageAudioSource> entry : imageAudioSources.entrySet()) {
             if (entry.getKey().getSoundInstance().equals(sound)) {
                 ImageAudioSource imageAudioSource = entry.getValue();
-//                imageAudioSource.cleanUpAudioFilter();
                 RealisticAcousticsClient.SOUND_MANAGER.stop(imageAudioSource.getImageSoundInstance());
             }
         }
@@ -67,6 +64,10 @@ public class AudioReceiver {
 
     public Vec3d getPosition() {
         return soundListenerTransform.position();
+    }
+
+    public void clearAudioSourceGrid() {
+        audioSourceGrid.clear();
     }
 
     private void castRays() {
@@ -95,10 +96,7 @@ public class AudioReceiver {
         Iterator<Map.Entry<AudioSource, ImageAudioSource>> it = imageAudioSources.entrySet().iterator();
         while (it.hasNext()) {
             ImageAudioSource imageAudioSource = it.next().getValue();
-            if (!imageAudioSource.isPlaying()) {
-//                imageAudioSource.cleanUpAudioFilter();
-                it.remove();
-            }
+            if (!imageAudioSource.isPlaying()) it.remove();
         }
     }
 

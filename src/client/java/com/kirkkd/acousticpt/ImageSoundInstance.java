@@ -20,7 +20,7 @@ public class ImageSoundInstance extends MovingSoundInstance {
     private double reverbGain = -1;
 
     private final SoundInstance originalInstance;
-    private final AtomicReference<AudioFilter> audioFilter = new AtomicReference<>();
+    private final AtomicReference<AudioModifier> audioFilter = new AtomicReference<>();
 
     protected ImageSoundInstance(SoundInstance original) {
         super(SoundEvent.of(original.getId()), original.getCategory(), SoundInstance.createRandom());
@@ -33,19 +33,19 @@ public class ImageSoundInstance extends MovingSoundInstance {
             ISourceMixin sourceMixin = (ISourceMixin) source;
             int pointer = sourceMixin.realistic_acoustics_1_21_5$getPointer();
 
-            AudioFilter filter = audioFilter.get() != null ? audioFilter.get() : new AudioFilter(pointer);
+            AudioModifier modifier = audioFilter.get() != null ? audioFilter.get() : new AudioModifier(pointer);
 
             // Muffle
             float minGainHF = 0.05f;
             float gain = 1.0f;
             float gainHF = (float) (minGainHF + (gain - minGainHF) * energy);
-//            filter.lowPass(gain, gainHF);
+            modifier.lowPass(gainHF);
 
             // Reverb
             if (reverbDelay != -1 && AudioCategories.shouldApplyReverb(originalInstance))
-                filter.reverb((float) reverbDelay, (float) reverbGain);
+                modifier.reverb((float) reverbDelay, (float) reverbGain);
 
-            audioFilter.set(filter);
+            audioFilter.set(modifier);
         });
     }
 

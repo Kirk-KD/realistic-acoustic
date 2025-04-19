@@ -23,6 +23,8 @@ public class AuxEffectManager {
         RealisticAcoustics.LOGGER.info("Created aux effect slots: {}", auxEffectSlotCount);
     }
 
+    // SOURCE
+
     public static int bindSource(int source) {
         ignoreError();
 
@@ -30,9 +32,6 @@ public class AuxEffectManager {
         for (int i = 0; i < auxEffectSlotCount; i++) {
             if (auxEffectSlotSources[i] == 0) { // available
                 auxEffectSlotSources[i] = source;
-                alSource3i(source, AL_AUXILIARY_SEND_FILTER, auxEffectSlots[i], 0, 0);
-                checkError("Failed to bind source.");
-
                 return auxEffectSlots[i];
             }
         }
@@ -49,6 +48,8 @@ public class AuxEffectManager {
             }
         }
     }
+
+    // EFFECT
 
     public static int createEffect() {
         ignoreError();
@@ -71,6 +72,33 @@ public class AuxEffectManager {
         alAuxiliaryEffectSloti(slot, AL_EFFECTSLOT_EFFECT, effect);
         checkError("Failed to attach effect to slot.");
     }
+
+    // FILTER
+
+    public static int createFilter() {
+        ignoreError();
+
+        int filter = alGenFilters();
+        checkError("Failed to create filter.");
+        return filter;
+    }
+
+    public static void deleteFilter(int filter) {
+        ignoreError();
+
+        alDeleteFilters(filter);
+        checkError("Failed to delete aux filter.");
+    }
+
+    public static void attachFilterToSource(int source, int slot, int filter) {
+        ignoreError();
+
+        alSourcei(source, AL_DIRECT_FILTER, filter);
+        alSource3i(source, AL_AUXILIARY_SEND_FILTER, slot, 0, filter);
+        checkError("Failed to attach aux filter.");
+    }
+
+    // ERROR
 
     private static void checkError(String msg) {
         int error = alGetError();

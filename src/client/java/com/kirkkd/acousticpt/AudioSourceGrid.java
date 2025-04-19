@@ -1,6 +1,5 @@
 package com.kirkkd.acousticpt;
 
-import com.kirkkd.RealisticAcoustics;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
@@ -71,6 +70,11 @@ public class AudioSourceGrid {
 
     public boolean isEmpty() {
         return count() == 0;
+    }
+
+    public void clear() {
+        initialize();
+        outOfRange.clear();
     }
 
     private void initialize() {

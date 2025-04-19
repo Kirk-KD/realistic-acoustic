@@ -1,13 +1,9 @@
 package com.kirkkd.mixin.client.sound;
 
-import com.kirkkd.RealisticAcoustics;
 import com.kirkkd.RealisticAcousticsClient;
 import com.kirkkd.access.ISoundManagerMixin;
 import com.kirkkd.acousticpt.*;
-import com.kirkkd.util.DebugMessage;
 import net.minecraft.client.sound.*;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
