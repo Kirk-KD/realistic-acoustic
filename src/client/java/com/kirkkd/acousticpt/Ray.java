@@ -125,17 +125,13 @@ public class Ray {
                     if (hitSources.contains(source)) continue;
 
                     hitSources.add(source);
-                    lastEcho = lastEcho == null ? source.getPosition() : lastEcho;
-                    audioReceiver.onRayHitSource(
-                            source,
-                            new AudioReceiver.HitSourceResult(
-                                    energy,
-                                    cumulativeDistance + t,
-                                    lastEcho,
-                                    lastEcho == null ? -1 : lastEcho.distanceTo(audioReceiver.getPosition()),
-                                    interactions == 0
-                            )
-                    );
+
+                    AudioHitResult result;
+                    if (lastEcho == null)
+                        result = new AudioHitResult(AudioHitResult.ResultType.DIRECT, energy, cumulativeDistance + t, null, 0);
+                    else
+                        result = new AudioHitResult(AudioHitResult.ResultType.ECHO, energy, cumulativeDistance + t, lastEcho, lastEcho.distanceTo(audioReceiver.getPosition()));
+                    audioReceiver.onRayHitSource(source, result);
                 }
             }
 
@@ -164,6 +160,11 @@ public class Ray {
                 // transmit through the block
                 energy *= Coefficient.ofTransmission(blockState);
             } else wasInAir = true;
+        }
+
+        if (hitSources.isEmpty()) {
+            if (interactions == 0) audioReceiver.onRayMissSource(new AudioHitResult(AudioHitResult.ResultType.MISSED, energy, cumulativeDistance + t, null, 0));
+            else if (lastEcho != null) audioReceiver.onRayMissSource(new AudioHitResult(AudioHitResult.ResultType.DECAYED, energy, cumulativeDistance + t, lastEcho, lastEcho.distanceTo(audioReceiver.getPosition())));
         }
     }
 

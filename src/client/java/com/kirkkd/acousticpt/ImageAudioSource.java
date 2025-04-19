@@ -3,7 +3,7 @@ package com.kirkkd.acousticpt;
 import com.kirkkd.RealisticAcousticsClient;
 import com.kirkkd.access.ISoundManagerMixin;
 import com.kirkkd.util.DebugParticle;
-import net.minecraft.particle.*;
+import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.List;
@@ -12,51 +12,72 @@ public class ImageAudioSource {
     private final AudioSource originalAudioSource;
     private final ImageSoundInstance imageSoundInstance;
 
-    public ImageAudioSource(AudioSource original, List<AudioReceiver.HitSourceResult> hits) {
+    public ImageAudioSource(AudioSource original, List<AudioHitResult> hits, List<AudioHitResult> misses) {
         originalAudioSource = original;
         originalAudioSource.getSoundInstance().getSoundSet(RealisticAcousticsClient.SOUND_MANAGER); // initialize .sound
         imageSoundInstance = new ImageSoundInstance(originalAudioSource.getSoundInstance());
-        updateImageSoundInstance(hits, false);
+        updateImageSoundInstance(hits, misses, false);
     }
 
-    public void updateImageSoundInstance(List<AudioReceiver.HitSourceResult> hits) {
-        updateImageSoundInstance(hits, true);
+    public void updateImageSoundInstance(List<AudioHitResult> hits, List<AudioHitResult> misses) {
+        updateImageSoundInstance(hits, misses, true);
     }
 
-    public void updateImageSoundInstance(List<AudioReceiver.HitSourceResult> hits, boolean smooth) {
-        double totalEnergy = hits.stream()
-                .mapToDouble(AudioReceiver.HitSourceResult::energy)
-                .sum();
-        double imageEnergy = Math.clamp(totalEnergy / Config.MAX_ENERGY, 0.0, 1.0);
+    public void updateImageSoundInstance(List<AudioHitResult> hits, List<AudioHitResult> misses, boolean smooth) {
+        double imageEnergy = 0;
+        Vec3d imagePosition = new Vec3d(0, 0, 0);
+        double reverbDelay = 0;
 
-        Vec3d sum = hits.stream()
-                .map(AudioReceiver.HitSourceResult::lastEcho)
-                .reduce(new Vec3d(0.0, 0.0, 0.0), Vec3d::add);
-        Vec3d imagePosition = hits.isEmpty()
-                ? originalAudioSource.getPosition()
-                : sum.multiply(1.0 / hits.size());
+        // Used to calculate the rough "room size"
+        int countDirectHits = 0;
+        int countEchoHits = 0;
+        int countEchoMisses = 0;
 
-        double imageVolume = originalAudioSource.getSoundInstance().getVolume() * imageEnergy;
+        for (AudioHitResult hit : hits) {
+            imageEnergy += hit.getEnergy();
+            if (hit.getResultType() == AudioHitResult.ResultType.DIRECT) {
+                imagePosition = imagePosition.add(originalAudioSource.getPosition());
+                reverbDelay += hit.getDistance();
+                countDirectHits++;
+            } else {
+                imagePosition = imagePosition.add(hit.getLastEchoPosition());
+                reverbDelay += hit.getLastEchoDistance();
+                countEchoHits++;
+            }
+        }
+        for (AudioHitResult miss : misses) {
+            if (miss.getResultType() == AudioHitResult.ResultType.DECAYED) {
+                reverbDelay += miss.getLastEchoDistance();
+                countEchoMisses++;
+            }
+        }
 
-        List<AudioReceiver.HitSourceResult> nonDirectHits = hits.stream()
-                .filter(hitSourceResult -> !hitSourceResult.isDirectHit())
-                .toList();
-
-        if (!nonDirectHits.isEmpty()) {
-            double reverbDelay = nonDirectHits.stream()
-                    .mapToDouble(AudioReceiver.HitSourceResult::lastEchoDistance)
-                    .sum() / nonDirectHits.size() / Config.SPEED_OF_SOUND;
-            double percentEcho = (double) nonDirectHits.size() / hits.size();
+        if (countEchoHits != 0) {
+            reverbDelay = reverbDelay / (countEchoHits + countEchoMisses + countDirectHits) / Config.SPEED_OF_SOUND;
+            double percentEcho = (double) (countEchoHits + countEchoMisses) / (hits.size() + misses.size()) - 0.9;
+            percentEcho *= 6;
+            percentEcho = Math.clamp(percentEcho, 0.0, 1.0);
 
             imageSoundInstance.setReverbDelay(reverbDelay);
             imageSoundInstance.setReverbGain(percentEcho);
         }
 
+        imageEnergy = Math.clamp(imageEnergy / Config.MAX_ENERGY, 0.0, 1.0);
+        imagePosition = hits.isEmpty() ? originalAudioSource.getPosition() : imagePosition.multiply(1.0 / hits.size());
+        double imageVolume = originalAudioSource.getSoundInstance().getVolume() * imageEnergy;
+
+        imageSoundInstance.setEnergySmoothly(imageEnergy, smooth ? Config.SMOOTH_FACTOR : 1);
         imageSoundInstance.setPositionSmoothly(imagePosition, smooth ? Config.SMOOTH_FACTOR : 1);
         imageSoundInstance.setVolumeSmoothly(imageVolume, smooth ? Config.SMOOTH_FACTOR : 1);
-        imageSoundInstance.setEnergySmoothly(imageEnergy, smooth ? Config.SMOOTH_FACTOR : 1);
 
-        hits.forEach(result -> DebugParticle.summon(0x00FF00, result.lastEcho()));
+        hits.forEach(result -> {
+            if (result.getResultType() == AudioHitResult.ResultType.ECHO)
+                DebugParticle.summon(0x00FF00, result.getLastEchoPosition());
+        });
+        misses.forEach(result -> {
+            if (result.getResultType() == AudioHitResult.ResultType.DECAYED)
+                DebugParticle.summon(0x009900, result.getLastEchoPosition());
+        });
         DebugParticle.summon(DustParticleEffect.RED, imagePosition);
     }
 

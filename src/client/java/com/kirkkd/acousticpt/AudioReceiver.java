@@ -10,14 +10,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AudioReceiver {
-    public record HitSourceResult(double energy, double distance, Vec3d lastEcho, double lastEchoDistance, boolean isDirectHit) {}
+//    public record HitSourceResult(double energy, double distance, Vec3d lastEcho, double lastEchoDistance, boolean isDirectHit) {}
 
     private final AudioSourceGrid audioSourceGrid;
     private SoundListenerTransform soundListenerTransform = null;
-    private final Map<AudioSource, List<HitSourceResult>> hitSourceResults = new ConcurrentHashMap<>();
+    private final Map<AudioSource, List<AudioHitResult>> hitSourceResults = new ConcurrentHashMap<>();
+    private final List<AudioHitResult> missSourceResults = Collections.synchronizedList(new ArrayList<>());
     private final Map<AudioSource, ImageAudioSource> imageAudioSources = new HashMap<>();
 
-    private static final List<Vec3d> DIRECTIONS = generateDirections();
+    private static List<Vec3d> DIRECTIONS = null;
 
     public AudioReceiver() {
         audioSourceGrid = new AudioSourceGrid(this);
@@ -33,6 +34,8 @@ public class AudioReceiver {
     }
 
     public void update() {
+        if (DIRECTIONS == null) DIRECTIONS = generateDirections();
+
         soundListenerTransform = RealisticAcousticsClient.SOUND_MANAGER.getListenerTransform();
 
         if (!audioSourceGrid.isEmpty()) {
@@ -46,11 +49,16 @@ public class AudioReceiver {
 
         audioSourceGrid.clearNotPlaying();
         hitSourceResults.clear();
+        missSourceResults.clear();
     }
 
-    public void onRayHitSource(AudioSource source, HitSourceResult result) {
-        if (result.energy < Config.MIN_ENERGY) return;
+    public void onRayHitSource(AudioSource source, AudioHitResult result) {
+        if (result.getEnergy() < Config.MIN_ENERGY) return;
         hitSourceResults.computeIfAbsent(source, k -> Collections.synchronizedList(new ArrayList<>())).add(result);
+    }
+
+    public void onRayMissSource(AudioHitResult result) {
+        missSourceResults.add(result);
     }
 
     public void onSoundInstanceStopped(SoundInstance sound) {
@@ -71,6 +79,8 @@ public class AudioReceiver {
     }
 
     private void castRays() {
+        if (DIRECTIONS == null) return;
+
         Vec3d pos = getPosition();
         DIRECTIONS.parallelStream().forEach(direction -> {
             Ray ray = new Ray(this, pos, direction);
@@ -79,15 +89,15 @@ public class AudioReceiver {
     }
 
     private void playImageAudioSources() {
-        for (Map.Entry<AudioSource, List<HitSourceResult>> entry : hitSourceResults.entrySet()) {
+        for (Map.Entry<AudioSource, List<AudioHitResult>> entry : hitSourceResults.entrySet()) {
             AudioSource source = entry.getKey();
-            List<HitSourceResult> results = entry.getValue();
+            List<AudioHitResult> results = entry.getValue();
 
             if (imageAudioSources.containsKey(source)) {
                 ImageAudioSource imageAudioSource = imageAudioSources.get(source);
-                if (imageAudioSource.isPlaying()) imageAudioSource.updateImageSoundInstance(results);
+                if (imageAudioSource.isPlaying()) imageAudioSource.updateImageSoundInstance(results, missSourceResults);
             } else {
-                ImageAudioSource imageAudioSource = new ImageAudioSource(source, results);
+                ImageAudioSource imageAudioSource = new ImageAudioSource(source, results, missSourceResults);
                 imageAudioSources.put(source, imageAudioSource);
                 imageAudioSource.play();
             }
