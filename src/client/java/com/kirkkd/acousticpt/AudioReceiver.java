@@ -10,8 +10,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AudioReceiver {
-//    public record HitSourceResult(double energy, double distance, Vec3d lastEcho, double lastEchoDistance, boolean isDirectHit) {}
-
     private final AudioSourceGrid audioSourceGrid;
     private SoundListenerTransform soundListenerTransform = null;
     private final Map<AudioSource, List<AudioHitResult>> hitSourceResults = new ConcurrentHashMap<>();
