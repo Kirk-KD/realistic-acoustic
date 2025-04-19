@@ -1,13 +1,22 @@
 package com.kirkkd.acousticpt;
 
 import com.kirkkd.RealisticAcoustics;
+import com.kirkkd.RealisticAcousticsClient;
+import com.kirkkd.access.ISoundEngineMixin;
+import com.kirkkd.access.ISoundManagerMixin;
+import com.kirkkd.access.ISoundSystemMixin;
+import net.minecraft.client.sound.SoundEngine;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.IntBuffer;
 
 import static org.lwjgl.openal.AL10.*;
 import static org.lwjgl.openal.AL11.alSource3i;
+import static org.lwjgl.openal.ALC10.alcGetIntegerv;
 import static org.lwjgl.openal.EXTEfx.*;
 
 public class AuxEffectManager {
-    private static final int MAX_AUX_SLOTS = 15;
+    private static final int MAX_AUX_SLOTS = 12;
 
     private static final int[] auxEffectSlots = new int[MAX_AUX_SLOTS];
     private static final int[] auxEffectSlotSources = new int[MAX_AUX_SLOTS];
@@ -21,6 +30,13 @@ public class AuxEffectManager {
             if (alGetError() != AL_NO_ERROR) break;
         }
         RealisticAcoustics.LOGGER.info("Created aux effect slots: {}", auxEffectSlotCount);
+        SoundEngine soundEngine = ((ISoundSystemMixin) ((ISoundManagerMixin) RealisticAcousticsClient.SOUND_MANAGER).realistic_acoustics_1_21_5$getSoundSystem()).realistic_acoustics_1_21_5$getSoundEngine();
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer intBuffer = stack.mallocInt(1);
+            long device = ((ISoundEngineMixin) soundEngine).realistic_acoustics_1_21_5$getDevicePointer();
+            alcGetIntegerv(device, ALC_MAX_AUXILIARY_SENDS, intBuffer);
+            RealisticAcoustics.LOGGER.info("Max aux sends per source: {}", intBuffer.get(0));
+        }
     }
 
     // SOURCE

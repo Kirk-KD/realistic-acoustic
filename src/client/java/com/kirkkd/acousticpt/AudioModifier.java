@@ -21,14 +21,16 @@ public class AudioModifier {
     public void lowPass(float gainHF) {
         if (destroyed) return;
 
-        createLowPassFilterIfNeeded();
+        if (bindAuxSlotIfNeeded()) {
+            createLowPassFilterIfNeeded();
 
-        alFilteri(lowPassFilter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
-        alFilterf(lowPassFilter, AL_LOWPASS_GAIN, 1);
-        alFilterf(lowPassFilter, AL_LOWPASS_GAINHF, gainHF);
-        if (alGetError() != AL_NO_ERROR) throw new RuntimeException("Failed to configure low pass.");
+            alFilteri(lowPassFilter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
+            alFilterf(lowPassFilter, AL_LOWPASS_GAIN, 1);
+            alFilterf(lowPassFilter, AL_LOWPASS_GAINHF, gainHF);
+            if (alGetError() != AL_NO_ERROR) throw new RuntimeException("Failed to configure low pass.");
 
-        AuxEffectManager.attachFilterToSource(source, auxSlot, lowPassFilter);
+            AuxEffectManager.attachFilterToSource(source, auxSlot, lowPassFilter);
+        }
     }
 
     public void reverb(float delay, float percentEcho) {
